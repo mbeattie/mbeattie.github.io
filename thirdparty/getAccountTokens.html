@@ -84,11 +84,19 @@ NzMyNTU1MTIzNDoxMjM0
 
 <tr>
 <td>x-application-identifier</td>
-<td>unique device identifier. Must match X-SNCR-APP-ID.</td>
+<td>unique device identifier. 
+  Must match X-SNCR-APP-ID. 
+  Takes the form of XX.#### where XX is something about the client type such as
+  "PC_Client" and #### is some unique number generated on first start
+  of the client and saved forever. This ID is unique per user per client.</td>
 </tr>
 <tr>
 <td>X-SNCR-APP-ID</td>
-<td>unique device identifier. Must match x-application-identifier.</td>
+<td>unique device identifier.
+  Must match x-application-identifier. 
+  Takes the form of XX.#### where XX is something about the client type such as
+  "PC_Client" and #### is some unique number generated on first start
+  of the client and saved forever. This ID is unique per user per client.</td>
 </tr>
 <tr>
 <td>X-SNCR-Client-Version</td>
@@ -137,7 +145,8 @@ will look something like this:
 
 
 
-<pre class="example">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+<pre class="example">
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
 &lt;ns1:account-tokens-get-response
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xmlns:ns1="http://www.fusionone.com/xmlns/f1" userid="17325551234"
