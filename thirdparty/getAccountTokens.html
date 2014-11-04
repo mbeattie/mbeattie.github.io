@@ -122,7 +122,11 @@ $ curl -s -X GET
 -H "X-F1-Client-Authorization: Basic
   YzJoaGNtVmtMbkJvYjI1bExtTnZiblJsYm5Sb2RXSTZZMjl1ZEdWdWRHaDFZbDl3YUc5dVpWOWpiR2xsYm5RPTpCYWw2b2trNm82OFJQWjJmVjJqZnNJZmRBWVV4OVU2QlhINDVrM2ZZdW\
 do"   \
--H "Authorization: Basic ${authToken}"
+-H "Authorization: Basic ${authToken}" \
+-H "x-application-identifier: TP.${mdn}" \
+-H "X-SNCR-APP-ID: TP.${mdn}" \
+-H "X-SNCR-Client-Version : 13.2.0.1" \
+-H "X-SNCR-Client-Platform: TP"
 </pre>
 
 
@@ -145,6 +149,7 @@ will look something like this:
   &lt;ns1:nabtoken&gt;AL0eSuOv8xkDMZrw02WfFU5K-fXma3U5WrB8wlSF3JA5avT6t92plMA8T_5L-yty5mKEiMvqE7zxrZd6dbANMPpwBgAFHDNjOPojLJ7Lmv3T7-tWqy1ap4iSdlR1oMH6uzNIUN85CdZf9YQPcaao-C_S2qRPKz1aZLT6jTo8jpfoTOnm1h3s32ofYazYzgQGPdQQE3-LN3cweJ7XIbSgDOw~&lt;/ns1:nabtoken&gt;
   &lt;ns1:dvtoken&gt;AL0eSuOv8xkDMZrw02WfFU5K-fXma3U5WrB8wlSF3JA5avT6t92plMA8T_5L-yty5mKEiMvqE7zxrZd6dbANMPpwBgAFHDNjOPojLJ7Lmv3T7-tWqy1ap4iSdlR1oMH6uzNIUN85CdZf9YQPcaao-C_S2qRPKz1aZLT6jTo8jpfoTOnm1h3s32ofYazYzgQGPdQQE3-LN3cweJ7XIbSgDOw~&lt;/ns1:dvtoken&gt;
   &lt;ns1:refreshtoken&gt;rqM1215p74BU0bPGa2zjUVU8P7Y8y1Yb&lt;/ns1:refreshtoken&gt;
+  &lt;ns1:locationuri&gt;http://ont-api-dc1-external-vip.hs1.newbayasp.net/snc-conf/snc-config&lt;/ns1:locationuri&gt
   &lt;ns1:lcid&gt;0bb4ac60692f4b7c9d915352ffb38439&lt;/ns1:lcid&gt;
 &lt;/ns1:account-tokens-get-response&gt;
 </pre>
