@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+<title>Third Party API</title>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.0/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.0/css/bootstrap-theme.min.css">
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.0/js/bootstrap.min.js"></script>
+</head>
+<body>
+<div align=center><h1>Third Party API</h1> </div>
+
+<div class=container-fluid>
+<p>This is a reference to the Verizon Cloud API. This site is meant as a reference for developers wishing to create clients that access Verizon Cloud data.</p>
+</div>
+
+<hr />
+
+<div class=container-fluid>
+<p>We have a brief <a href='tutorial.html'>tutorial</a> that is designed to help you gain a minimal understanding of how to interact with the APIs.</p>
+</div>
+
+<hr />
+
+<h3>Glossary</h3>
+<div class=container-fluid>
+<table border=1 cellpadding=0 cellspacing=0>
+<tr>
+  <td>
+    MDN
+  </td>
+  <td>
+    Mobile Directory Number. This is a subscriber's phone number.
+  </td>
+</tr>
+<tr>
+  <td>
+    NAB
+  </td>
+  <td>
+    Network Address Book. This is the front end system you will connect to in order to begin authentication.
+  </td>
+</tr>
+<tr>
+  <td>
+    WSG
+  </td>
+  <td>
+    Webservice Gateway. This is the name of the application that is the front end of NAB.
+  </td>
+</tr>
+<tr>
+  <td>
+    ATP
+  </td>
+  <td>
+    Authentication, Tokens, and Provisioning. This is the name of the service that handles authentication, tokens, and provisioning.
+  </td>
+</tr>
+<tr>
+  <td>
+    NAB Token
+  </td>
+  <td>
+    This is the token used to interact with the NAB system. It is good for 30 days. 
+  </td>
+</tr>
+<tr>
+  <td>
+    Refresh Token
+  </td>
+  <td>
+    This is the token used to get a new Media token when it expires. It is good for 14 days.
+  </td>
+</tr>
+<tr>
+  <td>
+    Media Token
+  </td>
+  <td>
+    This is the token used to interact with the Media storage system. It is good for 9 hours.
+  </td>
+</tr>
+<tr>
+  <td>
+    Etc...
+  </td>
+  <td>
+    More services and descriptions go here...
+  </td>
+</tr>
+</table>
+</div>
+
+<hr />
+<h3>Authentication</h3>
+
+<div class=container-fluid>
+<table border=0 cellpadding=0 cellspacing=0>
+<tr>
+  <td>
+    <a href='getAccountTokens.html'>getAccountTokens</a>
+  </td>
+  <td>
+    This API is the start of the authentication and provisioning flow. It takes login information and returns a set of tokens to be used for other API calls.
+  </td>
+</tr>
+<tr>
+  <td>
+    getAccount
+  </td>
+  <td>
+    This API is used to retrieve account information for hte subscriber. It takes a token as returned by getAccountTokens and returns data about the internal user ID as well as service level details.
+  </td>
+</tr>
+<tr>
+  <td>
+    SNC Config
+  </td>
+  <td>
+    This API is used to determine where to find configuration information for your client.
+  </td>
+</tr>
+<tr>
+  <td>
+    Client Config
+  </td>
+  <td>
+    This API is used to determine urls used to interact with the media system.
+  </td>
+</tr>
+<tr>
+  <td>
+    Refresh
+  </td>
+  <td>
+    This API is used to get new tokens after the initial ones expire. It is meant to reduce load against the Verizon authentication system.
+  </td>
+</tr>
+</table>
+</div>
+
+</body>
+</html>
