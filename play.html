@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>testing</title>
+<link rel="stylesheet" href="style.css">
+<script>
+
+function showMouseOver() {
+	if (this.style.color == "red") { 
+		this.style.color = "green"; 
+	} else {
+		this.style.color = "red";
+	}
+}
+function embiggen() {
+	this.style.fontSize="x-large";
+	if (this.style.fontWeight == "bold") {
+		this.style.fontWeight = "normal";
+	} else {
+		this.style.fontWeight = "bold";
+	}
+}
+
+</script>
+</head>
+<body>
+
+<div id=testpage class="center">Merry Christmas!</div>
+
+<script>
+var tp = document.getElementById("testpage");
+tp.onmouseover = showMouseOver;
+tp.onclick = embiggen;
+</script>
+
+</body>
+</html>
