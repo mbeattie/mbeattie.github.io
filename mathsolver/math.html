@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to math</title>
+<meta charset="utf-8">
+<style>
+body {
+		width: 35em;
+		margin: 0 auto;
+		font-family: Tahoma, Verdana, Arial, sans-serif;
+}
+</style>
+
+</head>
+<body>
+<div id="parameters" class="parameters">
+		<div>
+				<label>Number:</label>
+				<input type="text" id="number" value="0"/>
+		</div>
+		<div>
+				<label>Operation:</label>
+				<select id="operation">
+						<option value="+">+</option>
+						<option value="-">-</option>
+						<option value="both">both</option>
+				</select>
+		</div>
+		<div>
+				<label>Number of Questions:</label>
+				<input type="text" id="numquestions" value="30"/>
+		</div>
+		<div>
+				<button id="askquestions">ask questions</button>
+		</div>
+</div>
+<div id="questions" class="questions">
+		<h2>Problem:<span id="problem"></span></h2>
+		<h3>Your Answer:<input type="text" id="response" /></h3>
+		<button id="submit">submit</button>
+		<span align="left" id="left"></span> questions left
+</div>
+
+<div id="result"></div>
+
+<div id="score"></div>
+
+<div id="restart">
+ <button id="restartbtn">restart</button>
+</div>
+
+<script src="math.js"></script>
+</body>
+</html>
