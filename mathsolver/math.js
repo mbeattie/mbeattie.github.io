@@ -21,6 +21,13 @@ function getOtherNumber(number, operation) {
 
 function askQuestion(number, numquestions, operation) {
 	let otherNum = getOtherNumber(number, operation);
+	if (operation === 'both') {
+			if (Math.random() > 0.5) {
+					operation = '-';
+			} else {
+					operation = '+';
+			}
+	}
 	if (operation === '-') {
 			[otherNum, number] = [number, otherNum];
 	} else {
@@ -35,7 +42,6 @@ function askQuestion(number, numquestions, operation) {
 	document.getElementById('problem').innerHTML = html;
 	document.getElementById('left').innerHTML = numquestions;
 }
-
 
 function getCorrectAnswer() {
 	var number = parseInt(document.getElementById('qnumber').innerHTML);
@@ -56,28 +62,6 @@ function workComplete() {
 	document.getElementById('score').innerHTML = "You answered " + numQuestions + " questions!";
 	document.getElementById('restart').style.display = '';
 }
-
-document.getElementById('questions').style.display = 'none';
-document.getElementById('restart').style.display = 'none';
-document.getElementById('restartbtn').addEventListener('click', () => {
-		resetDisplay();
-});
-
-document.getElementById('askquestions').addEventListener('click', () => {
-	var number = parseInt(document.getElementById('number').value);
-	var numquestions = parseInt(document.getElementById('numquestions').value);
-	var operation = document.getElementById('operation').value;
-
-	var parameters = document.getElementById('parameters');
-	var questions = document.getElementById('questions');
-
-	parameters.style.display = 'none';
-	questions.style.display = '';
-
-	document.getElementById('response').value='';	
-	document.getElementById('response').focus();
-	askQuestion(number, numquestions, operation);
-});
 
 function handleSubmit() {
 	let answer = document.getElementById('response').value;	
@@ -101,6 +85,28 @@ function handleSubmit() {
 		console.log(getCorrectAnswer());
 	}
 }
+
+document.getElementById('questions').style.display = 'none';
+document.getElementById('restart').style.display = 'none';
+document.getElementById('restartbtn').addEventListener('click', () => {
+		resetDisplay();
+});
+
+document.getElementById('askquestions').addEventListener('click', () => {
+	var number = parseInt(document.getElementById('number').value);
+	var numquestions = parseInt(document.getElementById('numquestions').value);
+	var operation = document.getElementById('operation').value;
+
+	var parameters = document.getElementById('parameters');
+	var questions = document.getElementById('questions');
+
+	parameters.style.display = 'none';
+	questions.style.display = '';
+
+	document.getElementById('response').value='';	
+	document.getElementById('response').focus();
+	askQuestion(number, numquestions, operation);
+});
 
 document.getElementById('submit').addEventListener('click', () => {
 		handleSubmit();
