@@ -20,7 +20,6 @@ function getOtherNumber(number, operation) {
 }
 
 function askQuestion(number, numquestions, operation) {
-	let otherNum = getOtherNumber(number, operation);
 	if (operation === 'both') {
 			if (Math.random() > 0.5) {
 					operation = '-';
@@ -28,6 +27,7 @@ function askQuestion(number, numquestions, operation) {
 					operation = '+';
 			}
 	}
+	let otherNum = getOtherNumber(number, operation);
 	if (operation === '-') {
 			[otherNum, number] = [number, otherNum];
 	} else {
