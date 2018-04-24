@@ -8,20 +8,22 @@ function resetDisplay() {
 
 }
 
-function getOtherNumber(number, operation) {
+function getOtherNumber() {
     return otherNum = Math.floor(Math.random() * 11);
 }
 
-function askQuestion(number, numquestions, operation) {
-    let number = getOtherNumber(number, operation);
-	let otherNum = getOtherNumber(number, operation);
+function askQuestion(numquestions) {
+    let number = getOtherNumber();
+    console.log(number);
+	let otherNum = getOtherNumber();
+    console.log(otherNum);
 	if (Math.random() > 0.5) {
 		[otherNum, number] = [number, otherNum];
 	}
 
 	let html = '';
 	html += `<span id="qnumber" >${number}</span>`;
-	html += `<span id="qoperation" >${operation}</span>`;
+	html += `<span id="qoperation" >*</span>`;
     html += `<span id="qothernum" >${otherNum}</span>` ;
 	document.getElementById('problem').innerHTML = html;
 	document.getElementById('left').innerHTML = numquestions;
@@ -58,9 +60,7 @@ function handleSubmit() {
 			if (numQuestions == 1) {  //off by one here since it starts from the other button
 				workComplete();
 			} else {
-				askQuestion(parseInt(document.getElementById('number').value),
-							numQuestions - 1,
-							document.getElementById('operation').value);
+				askQuestion(numQuestions - 1);
 				document.getElementById('response').value='';
 				document.getElementById('response').focus();
 			}
@@ -80,9 +80,9 @@ document.getElementById('restartbtn').addEventListener('click', () => {
 });
 
 document.getElementById('askquestions').addEventListener('click', () => {
-	var number = parseInt(document.getElementById('number').value);
+	//var number = parseInt(document.getElementById('number').value);
 	var numquestions = parseInt(document.getElementById('numquestions').value);
-	var operation = document.getElementById('operation').value;
+	//var operation = document.getElementById('operation').value;
 
 	var parameters = document.getElementById('parameters');
 	var questions = document.getElementById('questions');
@@ -92,7 +92,7 @@ document.getElementById('askquestions').addEventListener('click', () => {
 
 	document.getElementById('response').value='';
 	document.getElementById('response').focus();
-	askQuestion(number, numquestions, operation);
+	askQuestion(numquestions);
 });
 
 document.getElementById('submit').addEventListener('click', () => {
