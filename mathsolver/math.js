@@ -9,36 +9,20 @@ function resetDisplay() {
 }
 
 function getOtherNumber(number, operation) {
-		if (operation === '+') {
-				otherNum = Math.floor(Math.random() * 11);
-				return otherNum;
-		} else {
-				otherNum = Math.floor(Math.random() * 11);
-				otherNum = otherNum + number;
-				return otherNum;
-		}
+    return otherNum = Math.floor(Math.random() * 11);
 }
 
 function askQuestion(number, numquestions, operation) {
-	if (operation === 'both') {
-			if (Math.random() > 0.5) {
-					operation = '-';
-			} else {
-					operation = '+';
-			}
-	}
+    let number = getOtherNumber(number, operation);
 	let otherNum = getOtherNumber(number, operation);
-	if (operation === '-') {
-			[otherNum, number] = [number, otherNum];
-	} else {
-			if (Math.random() > 0.5) {
-					[otherNum, number] = [number, otherNum];
-			}
+	if (Math.random() > 0.5) {
+		[otherNum, number] = [number, otherNum];
 	}
+
 	let html = '';
 	html += `<span id="qnumber" >${number}</span>`;
 	html += `<span id="qoperation" >${operation}</span>`;
-    html += `<span id="qothernum" >${otherNum}</span>` ; 
+    html += `<span id="qothernum" >${otherNum}</span>` ;
 	document.getElementById('problem').innerHTML = html;
 	document.getElementById('left').innerHTML = numquestions;
 }
@@ -47,12 +31,15 @@ function getCorrectAnswer() {
 	var number = parseInt(document.getElementById('qnumber').innerHTML);
 	var operation = document.getElementById('qoperation').innerHTML;
 	var othernumber = parseInt(document.getElementById('qothernum').innerHTML);
-	if (operation === '+') {
-			let answer = number + othernumber;
-			return answer;
-	} else {
-			let answer = number - othernumber;
-			return answer;
+	if (operation === '*') {
+		let answer = number * othernumber;
+		return answer;
+	} else 	if (operation === '+') {
+		let answer = number - othernumber;
+		return answer;
+    } else {
+		let answer = number - othernumber;
+		return answer;
 	}
 }
 
@@ -64,7 +51,7 @@ function workComplete() {
 }
 
 function handleSubmit() {
-	let answer = document.getElementById('response').value;	
+	let answer = document.getElementById('response').value;
 	let numQuestions = parseInt(document.getElementById('left').innerHTML);
 	if (answer == getCorrectAnswer()) {
 		document.getElementById('result').innerHTML="Correct!";
@@ -74,12 +61,12 @@ function handleSubmit() {
 				askQuestion(parseInt(document.getElementById('number').value),
 							numQuestions - 1,
 							document.getElementById('operation').value);
-				document.getElementById('response').value='';	
+				document.getElementById('response').value='';
 				document.getElementById('response').focus();
 			}
 	} else {
 		document.getElementById('result').innerHTML="Sorry, that's incorrect";
-		document.getElementById('response').value='';	
+		document.getElementById('response').value='';
 		document.getElementById('response').focus();
 		document.getElementById('response').select();
 		console.log(getCorrectAnswer());
@@ -103,7 +90,7 @@ document.getElementById('askquestions').addEventListener('click', () => {
 	parameters.style.display = 'none';
 	questions.style.display = '';
 
-	document.getElementById('response').value='';	
+	document.getElementById('response').value='';
 	document.getElementById('response').focus();
 	askQuestion(number, numquestions, operation);
 });
@@ -116,4 +103,3 @@ document.getElementById('response').onkeydown = (event) => {
 			handleSubmit();
 	}
 }
-
