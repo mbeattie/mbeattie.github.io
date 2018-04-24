@@ -69,7 +69,7 @@ function handleSubmit() {
 		document.getElementById('response').value='';
 		document.getElementById('response').focus();
 		document.getElementById('response').select();
-		console.log(getCorrectAnswer());
+		//console.log(getCorrectAnswer());
 	}
 }
 
