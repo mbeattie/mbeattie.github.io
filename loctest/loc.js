@@ -1,5 +1,7 @@
 
-const x = document.getElementById("loc");
+const lat = document.getElementById("lat");
+const long = document.getElementById("long");
+const acc = document.getElementById("acc");
 
 function getLocation() {
     if (navigator.geolocation) {
@@ -10,7 +12,9 @@ function getLocation() {
 }
 
 function showPosition(position) {
-    x.innerHTML = "Latitude: " + position.coords.latitude + "<br>Longitude: " + position.coords.longitude;
+    lat.innerHTML = position.coords.latitude;
+    long.innerHTML = position.coords.longitude;
+    acc.innerHTML = position.coords.accuracy;
 }
 
 document.getElementById("get_loc").addEventListener("click", () => {
