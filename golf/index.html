@@ -862,10 +862,11 @@
     // ── Save (phase 2) ────────────────────────────────────
     document.getElementById('btnSaveShot').addEventListener('click', () => {
         if (!pendingShot || !lastEndPos) return;
+        const endPos = lastEndPos;
         stopEndWatch();
 
-        pendingShot.endLat   = lastEndPos.coords.latitude;
-        pendingShot.endLng   = lastEndPos.coords.longitude;
+        pendingShot.endLat   = endPos.coords.latitude;
+        pendingShot.endLng   = endPos.coords.longitude;
         pendingShot.distance = Math.round(haversineYards(
             pendingShot.startLat, pendingShot.startLng,
             pendingShot.endLat,   pendingShot.endLng
