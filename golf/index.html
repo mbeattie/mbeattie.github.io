@@ -602,6 +602,7 @@
     // ── Start shot ────────────────────────────────────────
     btnGo.addEventListener('click', () => {
         if (!selectedClub) return;
+        const club = selectedClub;
         closeModal();
 
         if (!navigator.geolocation) {
@@ -611,7 +612,7 @@
 
         const now = new Date();
         pendingShot = {
-            club: selectedClub,
+            club: club,
             date: now.toLocaleDateString(undefined, { year:'numeric', month:'short', day:'numeric' }),
             time: now.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' }),
             startLat: null, startLng: null,
