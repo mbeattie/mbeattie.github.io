@@ -186,28 +186,46 @@
         }
         .shots-actions {
             display: flex;
-            gap: 8px;
+            flex-direction: column;
+            gap: 6px;
+            align-items: flex-end;
+        }
+        .shots-actions-row {
+            display: flex;
+            gap: 6px;
         }
         .btn-csv {
             background: #1a5c2e;
             color: white;
             border: none;
             border-radius: 8px;
-            padding: 7px 13px;
+            padding: 7px 11px;
             font-size: 12px;
             font-weight: 700;
             cursor: pointer;
         }
         .btn-csv:active { background: #134a24; }
+        .btn-kml {
+            background: #5c4a1a;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 7px 11px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .btn-kml:active { background: #3d3011; }
         .btn-clear-shots {
             background: #c0392b;
             color: white;
             border: none;
             border-radius: 8px;
-            padding: 7px 13px;
+            padding: 7px 11px;
             font-size: 12px;
             font-weight: 700;
             cursor: pointer;
+            width: 100%;
         }
         .btn-clear-shots:active { background: #922b21; }
 
@@ -554,7 +572,10 @@
     <div class="shots-header">
         <span class="shots-title" id="shotsTitle">Shots (0)</span>
         <div class="shots-actions">
-            <button class="btn-csv" id="btnCopyCSV">Copy CSV</button>
+            <div class="shots-actions-row">
+                <button class="btn-csv" id="btnCopyCSV">Copy CSV</button>
+                <button class="btn-kml" id="btnExportKML">Export KML</button>
+            </div>
             <button class="btn-clear-shots" id="btnClearShots">Clear Shots</button>
         </div>
     </div>
@@ -1039,6 +1060,86 @@
         }
         document.body.removeChild(ta);
     }
+
+    // ── KML export ───────────────────────────────────────
+    document.getElementById('btnExportKML').addEventListener('click', () => {
+        if (shots.length === 0) { showToast('No shots to export'); return; }
+
+        // KML colors are AABBGGRR (reversed from #RRGGBB)
+        const styleColors = {
+            driver: 'ffFF7929',   // blue
+            wood:   'ff53C853',   // green
+            iron:   'ff40D7FF',   // yellow
+            wedge:  'ff0066FF',   // orange
+            putter: 'ff0000D5'    // red
+        };
+
+        function shotStyle(club) {
+            if (club === 'Driver')                              return 'driver';
+            if (['3W','5W','7W','9W'].includes(club))           return 'wood';
+            if (/^\d+i$/.test(club))                           return 'iron';
+            if (/°$/.test(club) || ['PW','AW','GW','LW'].includes(club)) return 'wedge';
+            if (club === 'Putter')                             return 'putter';
+            return 'iron';
+        }
+
+        const styleXml = Object.entries(styleColors).map(([id, color]) => `
+    <Style id="${id}">
+      <LineStyle><color>${color}</color><width>4</width></LineStyle>
+      <IconStyle><color>${color}</color><scale>0.8</scale></IconStyle>
+      <LabelStyle><scale>0.85</scale></LabelStyle>
+    </Style>`).join('');
+
+        const foldersXml = shots.map((s, i) => {
+            const style = shotStyle(s.club);
+            const folderName = `${s.club} — ${s.distance} yds (${s.date} ${s.time})`;
+            // KML coords are lng,lat,alt
+            return `
+    <Folder>
+      <name>${folderName}</name>
+      <Placemark>
+        <name>Start</name>
+        <styleUrl>#${style}</styleUrl>
+        <Point><coordinates>${s.startLng},${s.startLat},0</coordinates></Point>
+      </Placemark>
+      <Placemark>
+        <name>${s.club} — ${s.distance} yds</name>
+        <description>${s.date} at ${s.time}</description>
+        <styleUrl>#${style}</styleUrl>
+        <LineString>
+          <tessellate>1</tessellate>
+          <coordinates>${s.startLng},${s.startLat},0 ${s.endLng},${s.endLat},0</coordinates>
+        </LineString>
+      </Placemark>
+      <Placemark>
+        <name>${s.distance} yds</name>
+        <styleUrl>#${style}</styleUrl>
+        <Point><coordinates>${s.endLng},${s.endLat},0</coordinates></Point>
+      </Placemark>
+    </Folder>`;
+        }).join('');
+
+        const date = new Date().toISOString().slice(0, 10);
+        const kml = `<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>Golf Shots — ${date}</name>
+    ${styleXml}
+    ${foldersXml}
+  </Document>
+</kml>`;
+
+        const blob = new Blob([kml], { type: 'application/vnd.google-earth.kml+xml' });
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href     = url;
+        a.download = `golf-shots-${date}.kml`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast(`Exported ${shots.length} shots as KML`);
+    });
 
     // ── Clear shots ───────────────────────────────────────
     document.getElementById('btnClearShots').addEventListener('click', () => {
