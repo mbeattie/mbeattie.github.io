@@ -218,16 +218,44 @@
             font-size: 14px;
         }
 
+        .shot-row {
+            position: relative;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            overflow: hidden;
+        }
+        .shot-delete-btn {
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 80px;
+            background: #c0392b;
+            color: white;
+            border: none;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            letter-spacing: 0.3px;
+        }
+        .shot-delete-btn:active { background: #922b21; }
+
         .shot-card {
             background: white;
             border-radius: 10px;
             padding: 12px 14px;
-            margin-bottom: 8px;
             border: 1px solid #e4e4dc;
             display: flex;
             justify-content: space-between;
             align-items: center;
             gap: 10px;
+            position: relative;
+            z-index: 1;
+            will-change: transform;
+            transition: transform 0.22s ease;
         }
         .sc-left .sc-club {
             font-size: 17px;
@@ -730,6 +758,66 @@
         gpsBarText.textContent = 'Acquiring GPS…';
     }
 
+    // ── Swipe-to-delete ───────────────────────────────────
+    const DELETE_W = 80;
+    let openRow = null;
+
+    function closeOpenRow() {
+        if (!openRow) return;
+        const card = openRow.querySelector('.shot-card');
+        card.style.transition = 'transform 0.22s ease';
+        card.style.transform = 'translateX(0)';
+        openRow = null;
+    }
+
+    function initSwipe(row) {
+        const card = row.querySelector('.shot-card');
+        let startX, startY, horizontal = null, active = false;
+
+        row.addEventListener('touchstart', e => {
+            startX = e.touches[0].clientX;
+            startY = e.touches[0].clientY;
+            horizontal = null;
+            active = true;
+            card.style.transition = 'none';
+        }, { passive: true });
+
+        row.addEventListener('touchmove', e => {
+            if (!active) return;
+            const dx = e.touches[0].clientX - startX;
+            const dy = e.touches[0].clientY - startY;
+            if (horizontal === null) {
+                if (Math.abs(dx) > Math.abs(dy) + 4)      horizontal = true;
+                else if (Math.abs(dy) > Math.abs(dx) + 4) horizontal = false;
+            }
+            if (!horizontal) return;
+            e.preventDefault();
+            const base = openRow === row ? -DELETE_W : 0;
+            card.style.transform = `translateX(${Math.min(0, Math.max(-DELETE_W, base + dx))}px)`;
+        }, { passive: false });
+
+        row.addEventListener('touchend', e => {
+            if (!active || !horizontal) { active = false; return; }
+            active = false;
+            const dx = e.changedTouches[0].clientX - startX;
+            const base = openRow === row ? -DELETE_W : 0;
+            card.style.transition = 'transform 0.22s ease';
+            if (base + dx < -(DELETE_W / 2)) {
+                card.style.transform = `translateX(-${DELETE_W}px)`;
+                if (openRow && openRow !== row) closeOpenRow();
+                openRow = row;
+            } else {
+                card.style.transform = 'translateX(0)';
+                if (openRow === row) openRow = null;
+            }
+        });
+    }
+
+    // tap outside any open row to close it
+    shotsList.addEventListener('touchstart', e => {
+        if (openRow && !openRow.contains(e.target)) closeOpenRow();
+    }, { passive: true });
+
     // ── Rendering ─────────────────────────────────────────
     function render() {
         shotsTitle.textContent = `Shots (${shots.length})`;
@@ -739,23 +827,36 @@
             return;
         }
 
-        shotsList.innerHTML = shots.slice().reverse().map(s => `
-            <div class="shot-card">
-                <div class="sc-left">
-                    <div class="sc-club">${esc(s.club)}</div>
-                    <div class="sc-datetime">${esc(s.date)} &nbsp;${esc(s.time)}</div>
-                    <div class="sc-coords">
-                        ${s.startLat.toFixed(5)}, ${s.startLng.toFixed(5)}
-                        &rarr;
-                        ${s.endLat.toFixed(5)}, ${s.endLng.toFixed(5)}
+        shotsList.innerHTML = shots.slice().reverse().map((s, i) => {
+            const idx = shots.length - 1 - i;
+            return `
+            <div class="shot-row" data-index="${idx}">
+                <button class="shot-delete-btn">Delete</button>
+                <div class="shot-card">
+                    <div class="sc-left">
+                        <div class="sc-club">${esc(s.club)}</div>
+                        <div class="sc-datetime">${esc(s.date)} &nbsp;${esc(s.time)}</div>
+                        <div class="sc-coords">
+                            ${s.startLat.toFixed(5)}, ${s.startLng.toFixed(5)}
+                            &rarr;
+                            ${s.endLat.toFixed(5)}, ${s.endLng.toFixed(5)}
+                        </div>
+                    </div>
+                    <div class="sc-right">
+                        <div class="sc-dist">${s.distance}</div>
+                        <div class="sc-unit">yards</div>
                     </div>
                 </div>
-                <div class="sc-right">
-                    <div class="sc-dist">${s.distance}</div>
-                    <div class="sc-unit">yards</div>
-                </div>
-            </div>
-        `).join('');
+            </div>`;
+        }).join('');
+
+        shotsList.querySelectorAll('.shot-row').forEach(row => {
+            initSwipe(row);
+            row.querySelector('.shot-delete-btn').addEventListener('click', () => {
+                shots.splice(parseInt(row.dataset.index), 1);
+                save();
+            });
+        });
     }
 
     function save() {
