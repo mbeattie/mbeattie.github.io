@@ -127,6 +127,47 @@
             cursor: pointer;
         }
 
+        /* ── End-location confirmation phase ── */
+        .end-gps-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: white;
+            border: 1px solid #e8e8e0;
+            border-radius: 10px;
+            padding: 10px 12px;
+            margin-bottom: 14px;
+            font-size: 13px;
+        }
+        .end-gps-bar .gps-dot { flex-shrink: 0; }
+        .end-gps-bar-text { flex: 1; color: #444; }
+        #btnSaveShot {
+            flex: 2;
+            background: #1a5c2e;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 15px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            opacity: 0.35;
+            pointer-events: none;
+            transition: opacity 0.15s;
+        }
+        #btnSaveShot.ready { opacity: 1; pointer-events: auto; }
+        #btnBackToWalk {
+            flex: 1;
+            background: white;
+            color: #555;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            padding: 15px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
         /* ── Shots list ── */
         .shots-section {
             flex: 1;
@@ -451,13 +492,32 @@
     <button id="btnTrack">Track Shot</button>
 
     <div class="in-progress-card" id="inProgressCard">
-        <div class="ip-label">Shot in Progress</div>
-        <div class="ip-club" id="ipClub"></div>
-        <div class="ip-status" id="ipStatus">Walk to your ball, then tap End Shot.</div>
-        <div class="ip-actions">
-            <button id="btnEndShot">End Shot</button>
-            <button id="btnCancelShot">Cancel</button>
+
+        <!-- Phase 1: walking to ball -->
+        <div id="ipPhase1">
+            <div class="ip-label">Shot in Progress</div>
+            <div class="ip-club" id="ipClub"></div>
+            <div class="ip-status" id="ipStatus">Walk to your ball, then tap End Shot.</div>
+            <div class="ip-actions">
+                <button id="btnEndShot">End Shot</button>
+                <button id="btnCancelShot">Cancel</button>
+            </div>
         </div>
+
+        <!-- Phase 2: confirming end location -->
+        <div id="ipPhase2" style="display:none">
+            <div class="ip-label">Confirm End Location</div>
+            <div class="ip-club" id="ipClub2"></div>
+            <div class="end-gps-bar">
+                <div class="gps-dot waiting" id="endGpsDot"></div>
+                <div class="end-gps-bar-text" id="endGpsText">Acquiring GPS…</div>
+            </div>
+            <div class="ip-actions">
+                <button id="btnSaveShot">Save</button>
+                <button id="btnBackToWalk">Back</button>
+            </div>
+        </div>
+
     </div>
 </div>
 
@@ -574,6 +634,57 @@
     const shotsTitle     = document.getElementById('shotsTitle');
     const gpsDot         = document.getElementById('gpsDot');
     const gpsBarText     = document.getElementById('gpsBarText');
+    const endGpsDot      = document.getElementById('endGpsDot');
+    const endGpsText     = document.getElementById('endGpsText');
+    const ipPhase1       = document.getElementById('ipPhase1');
+    const ipPhase2       = document.getElementById('ipPhase2');
+
+    // ── End-location GPS watch ────────────────────────────
+    let endWatchId   = null;
+    let lastEndPos   = null;   // most recent position from the end watch
+
+    function startEndWatch() {
+        lastEndPos = null;
+        endGpsDot.className = 'gps-dot waiting';
+        endGpsText.textContent = 'Acquiring GPS…';
+        document.getElementById('btnSaveShot').classList.remove('ready');
+
+        endWatchId = navigator.geolocation.watchPosition(
+            pos => {
+                lastEndPos = pos;
+                const acc = Math.round(pos.coords.accuracy);
+                let cls, label;
+                if (acc <= 3) {
+                    cls = 'excellent'; label = `Excellent — ±${acc}m`;
+                } else if (acc <= 6) {
+                    cls = 'good'; label = `Good — ±${acc}m`;
+                } else if (acc <= 12) {
+                    cls = 'ok'; label = `Fair — ±${acc}m — consider waiting`;
+                } else {
+                    cls = 'bad'; label = `Weak — ±${acc}m — wait for better lock`;
+                }
+                endGpsDot.className = `gps-dot ${cls}`;
+                endGpsText.innerHTML = `<strong>${label}</strong>`;
+                document.getElementById('btnSaveShot').classList.add('ready');
+            },
+            err => {
+                endGpsDot.className = 'gps-dot bad';
+                endGpsText.textContent = 'GPS error: ' + err.message;
+            },
+            { enableHighAccuracy: true, maximumAge: 0 }
+        );
+    }
+
+    function stopEndWatch() {
+        if (endWatchId !== null) {
+            navigator.geolocation.clearWatch(endWatchId);
+            endWatchId = null;
+        }
+        lastEndPos = null;
+        endGpsDot.className = 'gps-dot waiting';
+        endGpsText.textContent = 'Acquiring GPS…';
+        document.getElementById('btnSaveShot').classList.remove('ready');
+    }
 
     // ── Live GPS watch (modal only) ───────────────────────
     let gpsWatchId = null;
@@ -739,36 +850,40 @@
         );
     });
 
-    // ── End shot ──────────────────────────────────────────
-    btnEndShot.addEventListener('click', () => {
+    // ── End shot → go to phase 2 ──────────────────────────
+    document.getElementById('btnEndShot').addEventListener('click', () => {
         if (!pendingShot) return;
+        document.getElementById('ipClub2').textContent = pendingShot.club;
+        ipPhase1.style.display = 'none';
+        ipPhase2.style.display = 'block';
+        startEndWatch();
+    });
 
-        btnEndShot.disabled = true;
-        btnEndShot.innerHTML = '<span class="spinner"></span>Getting GPS…';
+    // ── Save (phase 2) ────────────────────────────────────
+    document.getElementById('btnSaveShot').addEventListener('click', () => {
+        if (!pendingShot || !lastEndPos) return;
+        stopEndWatch();
 
-        navigator.geolocation.getCurrentPosition(
-            pos => {
-                pendingShot.endLat  = pos.coords.latitude;
-                pendingShot.endLng  = pos.coords.longitude;
-                pendingShot.distance = Math.round(haversineYards(
-                    pendingShot.startLat, pendingShot.startLng,
-                    pendingShot.endLat,   pendingShot.endLng
-                ));
+        pendingShot.endLat   = lastEndPos.coords.latitude;
+        pendingShot.endLng   = lastEndPos.coords.longitude;
+        pendingShot.distance = Math.round(haversineYards(
+            pendingShot.startLat, pendingShot.startLng,
+            pendingShot.endLat,   pendingShot.endLng
+        ));
 
-                const saved = pendingShot;
-                pendingShot = null;
-                shots.push(saved);
-                save();
-                resetToIdle();
-                showToast(`Saved: ${saved.club} — ${saved.distance} yds`);
-            },
-            err => {
-                btnEndShot.disabled = false;
-                btnEndShot.textContent = 'End Shot';
-                showToast('GPS error: ' + err.message);
-            },
-            { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
-        );
+        const saved = pendingShot;
+        pendingShot = null;
+        shots.push(saved);
+        save();
+        resetToIdle();
+        showToast(`Saved: ${saved.club} — ${saved.distance} yds`);
+    });
+
+    // ── Back (phase 2 → phase 1) ──────────────────────────
+    document.getElementById('btnBackToWalk').addEventListener('click', () => {
+        stopEndWatch();
+        ipPhase2.style.display = 'none';
+        ipPhase1.style.display = 'block';
     });
 
     // ── Cancel shot ───────────────────────────────────────
@@ -779,12 +894,13 @@
     });
 
     function resetToIdle() {
+        stopEndWatch();
+        ipPhase1.style.display = 'block';
+        ipPhase2.style.display = 'none';
         inProgressCard.classList.remove('active');
         btnTrack.style.display = '';
         btnTrack.disabled = false;
         btnTrack.textContent = 'Track Shot';
-        btnEndShot.disabled = false;
-        btnEndShot.textContent = 'End Shot';
     }
 
     // ── CSV ───────────────────────────────────────────────
