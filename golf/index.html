@@ -352,6 +352,46 @@
             cursor: pointer;
         }
 
+        /* ── GPS accuracy bar ── */
+        .gps-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 14px;
+            border-top: 1px solid #eee;
+            background: #fafafa;
+            font-size: 13px;
+        }
+        .gps-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            background: #ccc;
+            transition: background 0.4s;
+        }
+        .gps-dot.excellent { background: #1a5c2e; box-shadow: 0 0 0 3px rgba(26,92,46,0.25); }
+        .gps-dot.good      { background: #6dbf82; box-shadow: 0 0 0 3px rgba(109,191,130,0.25); }
+        .gps-dot.ok        { background: #f39c12; box-shadow: 0 0 0 3px rgba(243,156,18,0.2); }
+        .gps-dot.bad       { background: #e74c3c; box-shadow: 0 0 0 3px rgba(231,76,60,0.2); }
+        .gps-dot.waiting { background: #ccc; animation: pulse 1.2s ease-in-out infinite; }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50%       { opacity: 0.35; }
+        }
+        .gps-bar-text {
+            flex: 1;
+            color: #555;
+        }
+        .gps-bar-text strong {
+            color: #222;
+        }
+        .gps-hint {
+            font-size: 11px;
+            color: #aaa;
+            font-style: italic;
+        }
+
         /* ── Misc ── */
         .spinner {
             display: inline-block;
@@ -499,6 +539,10 @@
             </div>
 
         </div>
+        <div class="gps-bar" id="gpsBar">
+            <div class="gps-dot waiting" id="gpsDot"></div>
+            <div class="gps-bar-text" id="gpsBarText">Acquiring GPS…</div>
+        </div>
         <div class="modal-foot">
             <button id="btnGo">Go</button>
             <button id="btnModalCancel">Cancel</button>
@@ -528,6 +572,52 @@
     const btnGo          = document.getElementById('btnGo');
     const shotsList      = document.getElementById('shotsList');
     const shotsTitle     = document.getElementById('shotsTitle');
+    const gpsDot         = document.getElementById('gpsDot');
+    const gpsBarText     = document.getElementById('gpsBarText');
+
+    // ── Live GPS watch (modal only) ───────────────────────
+    let gpsWatchId = null;
+
+    function startGpsWatch() {
+        if (!navigator.geolocation) {
+            gpsBarText.textContent = 'GPS not available';
+            return;
+        }
+        gpsDot.className = 'gps-dot waiting';
+        gpsBarText.textContent = 'Acquiring GPS…';
+
+        gpsWatchId = navigator.geolocation.watchPosition(
+            pos => {
+                const acc = Math.round(pos.coords.accuracy);
+                let cls, label;
+                if (acc <= 3) {
+                    cls = 'excellent'; label = `Excellent — ±${acc}m`;
+                } else if (acc <= 6) {
+                    cls = 'good'; label = `Good — ±${acc}m`;
+                } else if (acc <= 12) {
+                    cls = 'ok'; label = `Fair — ±${acc}m — consider waiting`;
+                } else {
+                    cls = 'bad'; label = `Weak — ±${acc}m — wait for better lock`;
+                }
+                gpsDot.className = `gps-dot ${cls}`;
+                gpsBarText.innerHTML = `<strong>${label}</strong>`;
+            },
+            err => {
+                gpsDot.className = 'gps-dot bad';
+                gpsBarText.textContent = 'GPS error: ' + err.message;
+            },
+            { enableHighAccuracy: true, maximumAge: 0 }
+        );
+    }
+
+    function stopGpsWatch() {
+        if (gpsWatchId !== null) {
+            navigator.geolocation.clearWatch(gpsWatchId);
+            gpsWatchId = null;
+        }
+        gpsDot.className = 'gps-dot waiting';
+        gpsBarText.textContent = 'Acquiring GPS…';
+    }
 
     // ── Rendering ─────────────────────────────────────────
     function render() {
@@ -578,6 +668,7 @@
         selBadge.classList.remove('visible');
         btnGo.classList.remove('ready');
         clubModal.classList.add('active');
+        startGpsWatch();
     });
 
     document.querySelectorAll('.club-btn').forEach(btn => {
@@ -594,6 +685,7 @@
     function closeModal() {
         clubModal.classList.remove('active');
         selectedClub = null;
+        stopGpsWatch();
     }
 
     clubModal.addEventListener('click', e => { if (e.target === clubModal) closeModal(); });
@@ -628,7 +720,7 @@
                 pendingShot.startLat = pos.coords.latitude;
                 pendingShot.startLng = pos.coords.longitude;
                 const acc = Math.round(pos.coords.accuracy);
-                const cls = acc < 6 ? 'acc-good' : acc < 16 ? 'acc-ok' : 'acc-bad';
+                const cls = acc <= 6 ? 'acc-good' : acc <= 12 ? 'acc-ok' : 'acc-bad';
 
                 btnTrack.style.display = 'none';
                 ipClub.textContent = pendingShot.club;
