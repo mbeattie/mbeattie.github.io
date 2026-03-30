@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#1a5c2e">
+    <title>Golf Shot Tracker</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f0f0eb;
+            color: #1a1a1a;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ── Header ── */
+        header {
+            background: #1a5c2e;
+            color: white;
+            padding: 14px 16px 12px;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        header h1 {
+            font-size: 19px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+        }
+
+        /* ── Track section ── */
+        .track-section {
+            padding: 20px 16px;
+            background: white;
+            border-bottom: 1px solid #deded6;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 14px;
+        }
+
+        #btnTrack {
+            width: 100%;
+            max-width: 360px;
+            background: #1a5c2e;
+            color: white;
+            border: none;
+            border-radius: 14px;
+            padding: 18px;
+            font-size: 19px;
+            font-weight: 700;
+            cursor: pointer;
+            letter-spacing: 0.3px;
+        }
+        #btnTrack:active { background: #134a24; }
+        #btnTrack:disabled { opacity: 0.7; }
+
+        /* ── In-progress card ── */
+        .in-progress-card {
+            display: none;
+            width: 100%;
+            max-width: 360px;
+            background: #fffbee;
+            border: 2px solid #e8a800;
+            border-radius: 14px;
+            padding: 16px;
+        }
+        .in-progress-card.active { display: block; }
+
+        .ip-label {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: #b07800;
+            margin-bottom: 4px;
+        }
+        .ip-club {
+            font-size: 24px;
+            font-weight: 800;
+            color: #1a1a1a;
+            margin-bottom: 6px;
+        }
+        .ip-status {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 14px;
+            line-height: 1.4;
+        }
+        .ip-actions {
+            display: flex;
+            gap: 10px;
+        }
+        #btnEndShot {
+            flex: 2;
+            background: #1a5c2e;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 15px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        #btnEndShot:disabled { opacity: 0.7; }
+        #btnCancelShot {
+            flex: 1;
+            background: white;
+            color: #555;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            padding: 15px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        /* ── Shots list ── */
+        .shots-section {
+            flex: 1;
+            padding: 14px 14px 24px;
+        }
+        .shots-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .shots-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #444;
+        }
+        .shots-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .btn-csv {
+            background: #1a5c2e;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 7px 13px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .btn-csv:active { background: #134a24; }
+        .btn-clear-shots {
+            background: #c0392b;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 7px 13px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .btn-clear-shots:active { background: #922b21; }
+
+        .empty-state {
+            text-align: center;
+            color: #aaa;
+            padding: 40px 16px;
+            font-size: 14px;
+        }
+
+        .shot-card {
+            background: white;
+            border-radius: 10px;
+            padding: 12px 14px;
+            margin-bottom: 8px;
+            border: 1px solid #e4e4dc;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+        .sc-left .sc-club {
+            font-size: 17px;
+            font-weight: 700;
+        }
+        .sc-left .sc-datetime {
+            font-size: 12px;
+            color: #999;
+            margin-top: 2px;
+        }
+        .sc-left .sc-coords {
+            font-size: 10px;
+            color: #bbb;
+            margin-top: 3px;
+            font-family: monospace;
+        }
+        .sc-right {
+            text-align: right;
+            flex-shrink: 0;
+        }
+        .sc-right .sc-dist {
+            font-size: 22px;
+            font-weight: 800;
+            color: #1a5c2e;
+            line-height: 1;
+        }
+        .sc-right .sc-unit {
+            font-size: 11px;
+            color: #aaa;
+            margin-top: 2px;
+        }
+
+        /* ── Club picker modal ── */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.55);
+            z-index: 50;
+            align-items: flex-end;
+        }
+        .modal-overlay.active { display: flex; }
+
+        .modal-sheet {
+            background: white;
+            border-radius: 22px 22px 0 0;
+            width: 100%;
+            max-height: 88vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+        }
+
+        .modal-handle {
+            width: 38px;
+            height: 4px;
+            background: #ddd;
+            border-radius: 2px;
+            margin: 10px auto 4px;
+        }
+
+        .modal-head {
+            padding: 8px 18px 12px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .modal-head h2 {
+            font-size: 17px;
+            font-weight: 700;
+        }
+        .sel-badge {
+            background: #1a5c2e;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 700;
+            opacity: 0;
+            transition: opacity 0.15s;
+        }
+        .sel-badge.visible { opacity: 1; }
+
+        .club-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 14px 4px;
+        }
+
+        .club-group-label {
+            font-size: 10px;
+            font-weight: 700;
+            color: #aaa;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin: 10px 0 5px;
+        }
+
+        .club-row {
+            display: grid;
+            gap: 7px;
+            margin-bottom: 7px;
+        }
+        .club-row.c1 { grid-template-columns: 1fr; }
+        .club-row.c2 { grid-template-columns: 1fr 1fr; }
+        .club-row.c4 { grid-template-columns: repeat(4, 1fr); }
+        .club-row.c5 { grid-template-columns: repeat(5, 1fr); }
+
+        .club-btn {
+            background: #f4f4ef;
+            border: 2px solid transparent;
+            border-radius: 9px;
+            padding: 11px 4px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+            color: #333;
+            line-height: 1;
+        }
+        .club-btn:active, .club-btn.sel {
+            background: #e6f4eb;
+            border-color: #1a5c2e;
+            color: #1a5c2e;
+        }
+
+        .modal-foot {
+            padding: 12px 14px 20px;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 10px;
+        }
+        #btnGo {
+            flex: 2;
+            background: #1a5c2e;
+            color: white;
+            border: none;
+            border-radius: 13px;
+            padding: 16px;
+            font-size: 17px;
+            font-weight: 700;
+            cursor: pointer;
+            opacity: 0.35;
+            pointer-events: none;
+            transition: opacity 0.15s;
+        }
+        #btnGo.ready {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        #btnGo:active { background: #134a24; }
+        #btnModalCancel {
+            flex: 1;
+            background: white;
+            color: #666;
+            border: 2px solid #ddd;
+            border-radius: 13px;
+            padding: 16px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        /* ── Misc ── */
+        .spinner {
+            display: inline-block;
+            width: 15px;
+            height: 15px;
+            border: 2px solid rgba(255,255,255,0.35);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.65s linear infinite;
+            vertical-align: middle;
+            margin-right: 6px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .acc-badge {
+            display: inline-block;
+            padding: 1px 7px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .acc-good { background: #e6f4eb; color: #1a5c2e; }
+        .acc-ok   { background: #fffbee; color: #b07800; }
+        .acc-bad  { background: #fde8e8; color: #c0392b; }
+
+        .toast {
+            position: fixed;
+            bottom: 28px;
+            left: 50%;
+            transform: translateX(-50%) translateY(12px);
+            background: rgba(30,30,30,0.9);
+            color: white;
+            padding: 9px 18px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+            opacity: 0;
+            transition: opacity 0.25s, transform 0.25s;
+            z-index: 999;
+            white-space: nowrap;
+            pointer-events: none;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Golf Shot Tracker</h1>
+</header>
+
+<!-- Track section -->
+<div class="track-section">
+    <button id="btnTrack">Track Shot</button>
+
+    <div class="in-progress-card" id="inProgressCard">
+        <div class="ip-label">Shot in Progress</div>
+        <div class="ip-club" id="ipClub"></div>
+        <div class="ip-status" id="ipStatus">Walk to your ball, then tap End Shot.</div>
+        <div class="ip-actions">
+            <button id="btnEndShot">End Shot</button>
+            <button id="btnCancelShot">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- Shots list -->
+<div class="shots-section">
+    <div class="shots-header">
+        <span class="shots-title" id="shotsTitle">Shots (0)</span>
+        <div class="shots-actions">
+            <button class="btn-csv" id="btnCopyCSV">Copy CSV</button>
+            <button class="btn-clear-shots" id="btnClearShots">Clear Shots</button>
+        </div>
+    </div>
+    <div id="shotsList"></div>
+</div>
+
+<!-- Club picker modal -->
+<div class="modal-overlay" id="clubModal">
+    <div class="modal-sheet">
+        <div class="modal-handle"></div>
+        <div class="modal-head">
+            <h2>Select Club</h2>
+            <span class="sel-badge" id="selBadge"></span>
+        </div>
+        <div class="club-scroll">
+
+            <div class="club-group-label">Driver</div>
+            <div class="club-row c1">
+                <button class="club-btn" data-club="Driver">Driver</button>
+            </div>
+
+            <div class="club-group-label">Woods</div>
+            <div class="club-row c4">
+                <button class="club-btn" data-club="3W">3W</button>
+                <button class="club-btn" data-club="5W">5W</button>
+                <button class="club-btn" data-club="7W">7W</button>
+                <button class="club-btn" data-club="9W">9W</button>
+            </div>
+
+            <div class="club-group-label">Irons</div>
+            <div class="club-row c5">
+                <button class="club-btn" data-club="1i">1i</button>
+                <button class="club-btn" data-club="2i">2i</button>
+                <button class="club-btn" data-club="3i">3i</button>
+                <button class="club-btn" data-club="4i">4i</button>
+                <button class="club-btn" data-club="5i">5i</button>
+            </div>
+            <div class="club-row c4">
+                <button class="club-btn" data-club="6i">6i</button>
+                <button class="club-btn" data-club="7i">7i</button>
+                <button class="club-btn" data-club="8i">8i</button>
+                <button class="club-btn" data-club="9i">9i</button>
+            </div>
+
+            <div class="club-group-label">Wedges — by degree</div>
+            <div class="club-row c4">
+                <button class="club-btn" data-club="46°">46°</button>
+                <button class="club-btn" data-club="48°">48°</button>
+                <button class="club-btn" data-club="50°">50°</button>
+                <button class="club-btn" data-club="52°">52°</button>
+            </div>
+            <div class="club-row c4">
+                <button class="club-btn" data-club="54°">54°</button>
+                <button class="club-btn" data-club="56°">56°</button>
+                <button class="club-btn" data-club="58°">58°</button>
+                <button class="club-btn" data-club="60°">60°</button>
+            </div>
+
+            <div class="club-group-label">Wedges — named</div>
+            <div class="club-row c4">
+                <button class="club-btn" data-club="PW">PW</button>
+                <button class="club-btn" data-club="AW">AW</button>
+                <button class="club-btn" data-club="GW">GW</button>
+                <button class="club-btn" data-club="LW">LW</button>
+            </div>
+
+            <div class="club-group-label">Short Game</div>
+            <div class="club-row c1">
+                <button class="club-btn" data-club="Putter">Putter</button>
+            </div>
+
+        </div>
+        <div class="modal-foot">
+            <button id="btnGo">Go</button>
+            <button id="btnModalCancel">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+    // ── State ──────────────────────────────────────────────
+    let shots = [];
+    try { shots = JSON.parse(localStorage.getItem('golfShots') || '[]'); } catch(e) {}
+
+    let selectedClub = null;
+    let pendingShot = null;   // shot object being built
+
+    // ── DOM refs ──────────────────────────────────────────
+    const btnTrack       = document.getElementById('btnTrack');
+    const inProgressCard = document.getElementById('inProgressCard');
+    const ipClub         = document.getElementById('ipClub');
+    const ipStatus       = document.getElementById('ipStatus');
+    const btnEndShot     = document.getElementById('btnEndShot');
+    const btnCancelShot  = document.getElementById('btnCancelShot');
+    const clubModal      = document.getElementById('clubModal');
+    const selBadge       = document.getElementById('selBadge');
+    const btnGo          = document.getElementById('btnGo');
+    const shotsList      = document.getElementById('shotsList');
+    const shotsTitle     = document.getElementById('shotsTitle');
+
+    // ── Rendering ─────────────────────────────────────────
+    function render() {
+        shotsTitle.textContent = `Shots (${shots.length})`;
+
+        if (shots.length === 0) {
+            shotsList.innerHTML = '<div class="empty-state">No shots yet. Tap "Track Shot" to begin.</div>';
+            return;
+        }
+
+        shotsList.innerHTML = shots.slice().reverse().map(s => `
+            <div class="shot-card">
+                <div class="sc-left">
+                    <div class="sc-club">${esc(s.club)}</div>
+                    <div class="sc-datetime">${esc(s.date)} &nbsp;${esc(s.time)}</div>
+                    <div class="sc-coords">
+                        ${s.startLat.toFixed(5)}, ${s.startLng.toFixed(5)}
+                        &rarr;
+                        ${s.endLat.toFixed(5)}, ${s.endLng.toFixed(5)}
+                    </div>
+                </div>
+                <div class="sc-right">
+                    <div class="sc-dist">${s.distance}</div>
+                    <div class="sc-unit">yards</div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function save() {
+        localStorage.setItem('golfShots', JSON.stringify(shots));
+        render();
+    }
+
+    function esc(str) {
+        return String(str)
+            .replace(/&/g,'&amp;')
+            .replace(/</g,'&lt;')
+            .replace(/>/g,'&gt;');
+    }
+
+    // ── Club picker ───────────────────────────────────────
+    btnTrack.addEventListener('click', () => {
+        if (pendingShot) return;
+        selectedClub = null;
+        document.querySelectorAll('.club-btn').forEach(b => b.classList.remove('sel'));
+        selBadge.textContent = '';
+        selBadge.classList.remove('visible');
+        btnGo.classList.remove('ready');
+        clubModal.classList.add('active');
+    });
+
+    document.querySelectorAll('.club-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            selectedClub = btn.dataset.club;
+            document.querySelectorAll('.club-btn').forEach(b => b.classList.remove('sel'));
+            btn.classList.add('sel');
+            selBadge.textContent = selectedClub;
+            selBadge.classList.add('visible');
+            btnGo.classList.add('ready');
+        });
+    });
+
+    function closeModal() {
+        clubModal.classList.remove('active');
+        selectedClub = null;
+    }
+
+    clubModal.addEventListener('click', e => { if (e.target === clubModal) closeModal(); });
+    document.getElementById('btnModalCancel').addEventListener('click', closeModal);
+
+    // ── Start shot ────────────────────────────────────────
+    btnGo.addEventListener('click', () => {
+        if (!selectedClub) return;
+        closeModal();
+
+        if (!navigator.geolocation) {
+            showToast('GPS not available on this device/browser');
+            return;
+        }
+
+        const now = new Date();
+        pendingShot = {
+            club: selectedClub,
+            date: now.toLocaleDateString(undefined, { year:'numeric', month:'short', day:'numeric' }),
+            time: now.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' }),
+            startLat: null, startLng: null,
+            endLat: null,   endLng: null,
+            distance: null
+        };
+
+        btnTrack.disabled = true;
+        btnTrack.innerHTML = '<span class="spinner"></span>Getting GPS…';
+
+        navigator.geolocation.getCurrentPosition(
+            pos => {
+                pendingShot.startLat = pos.coords.latitude;
+                pendingShot.startLng = pos.coords.longitude;
+                const acc = Math.round(pos.coords.accuracy);
+                const cls = acc < 6 ? 'acc-good' : acc < 16 ? 'acc-ok' : 'acc-bad';
+
+                btnTrack.style.display = 'none';
+                ipClub.textContent = pendingShot.club;
+                ipStatus.innerHTML =
+                    `Start captured <span class="acc-badge ${cls}">±${acc}m</span><br>
+                     Walk to your ball, then tap End Shot.`;
+                inProgressCard.classList.add('active');
+            },
+            err => {
+                pendingShot = null;
+                btnTrack.disabled = false;
+                btnTrack.textContent = 'Track Shot';
+                showToast('GPS error: ' + err.message);
+            },
+            { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
+        );
+    });
+
+    // ── End shot ──────────────────────────────────────────
+    btnEndShot.addEventListener('click', () => {
+        if (!pendingShot) return;
+
+        btnEndShot.disabled = true;
+        btnEndShot.innerHTML = '<span class="spinner"></span>Getting GPS…';
+
+        navigator.geolocation.getCurrentPosition(
+            pos => {
+                pendingShot.endLat  = pos.coords.latitude;
+                pendingShot.endLng  = pos.coords.longitude;
+                pendingShot.distance = Math.round(haversineYards(
+                    pendingShot.startLat, pendingShot.startLng,
+                    pendingShot.endLat,   pendingShot.endLng
+                ));
+
+                const saved = pendingShot;
+                pendingShot = null;
+                shots.push(saved);
+                save();
+                resetToIdle();
+                showToast(`Saved: ${saved.club} — ${saved.distance} yds`);
+            },
+            err => {
+                btnEndShot.disabled = false;
+                btnEndShot.textContent = 'End Shot';
+                showToast('GPS error: ' + err.message);
+            },
+            { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
+        );
+    });
+
+    // ── Cancel shot ───────────────────────────────────────
+    btnCancelShot.addEventListener('click', () => {
+        pendingShot = null;
+        resetToIdle();
+        showToast('Shot cancelled');
+    });
+
+    function resetToIdle() {
+        inProgressCard.classList.remove('active');
+        btnTrack.style.display = '';
+        btnTrack.disabled = false;
+        btnTrack.textContent = 'Track Shot';
+        btnEndShot.disabled = false;
+        btnEndShot.textContent = 'End Shot';
+    }
+
+    // ── CSV ───────────────────────────────────────────────
+    document.getElementById('btnCopyCSV').addEventListener('click', () => {
+        if (shots.length === 0) { showToast('No shots to copy'); return; }
+
+        const header = 'Club,Date,Time,Start Lat,Start Lng,End Lat,End Lng,Distance (yards)';
+        const rows = shots.map(s =>
+            [s.club, s.date, s.time, s.startLat, s.startLng, s.endLat, s.endLng, s.distance].join(',')
+        );
+        const csv = [header, ...rows].join('\n');
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(csv)
+                .then(() => showToast(`Copied ${shots.length} shot${shots.length>1?'s':''} to clipboard`))
+                .catch(() => fallbackCopy(csv));
+        } else {
+            fallbackCopy(csv);
+        }
+    });
+
+    function fallbackCopy(text) {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0;';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        try {
+            document.execCommand('copy');
+            showToast(`Copied ${shots.length} shots to clipboard`);
+        } catch(e) {
+            showToast('Copy failed — try a different browser');
+        }
+        document.body.removeChild(ta);
+    }
+
+    // ── Clear shots ───────────────────────────────────────
+    document.getElementById('btnClearShots').addEventListener('click', () => {
+        if (shots.length === 0) { showToast('No shots to clear'); return; }
+        if (confirm(`Clear all ${shots.length} shot${shots.length>1?'s':''}? This cannot be undone.`)) {
+            shots = [];
+            save();
+            showToast('All shots cleared');
+        }
+    });
+
+    // ── Haversine distance (yards) ────────────────────────
+    function haversineYards(lat1, lon1, lat2, lon2) {
+        const R = 6371000;
+        const toRad = x => x * Math.PI / 180;
+        const dLat = toRad(lat2 - lat1);
+        const dLon = toRad(lon2 - lon1);
+        const a = Math.sin(dLat/2)**2
+                + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon/2)**2;
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)) * 1.09361;
+    }
+
+    // ── Toast ─────────────────────────────────────────────
+    let toastTimer;
+    function showToast(msg) {
+        const el = document.getElementById('toast');
+        el.textContent = msg;
+        el.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => el.classList.remove('show'), 2600);
+    }
+
+    // ── Init ──────────────────────────────────────────────
+    render();
+</script>
+</body>
+</html>
