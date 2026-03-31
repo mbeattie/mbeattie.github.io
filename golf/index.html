@@ -35,13 +35,14 @@ header h1{font-size:18px;font-weight:700}
 .rounds-section{flex:1;padding:14px 14px 24px;overflow-y:auto}
 .section-label{font-size:13px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px}
 
-.round-card{background:white;border-radius:12px;padding:14px;margin-bottom:10px;border:1px solid #e4e4dc;display:flex;justify-content:space-between;align-items:center;gap:10px;cursor:default}
+.round-card{background:white;border-radius:12px;padding:14px;margin-bottom:10px;border:1px solid #e4e4dc;display:flex;flex-direction:column;gap:10px;cursor:default}
+.rc-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
 .rc-left .rc-name{font-size:16px;font-weight:700}
 .rc-left .rc-meta{font-size:12px;color:#999;margin-top:2px}
 .rc-right{text-align:right;flex-shrink:0}
 .rc-score{font-size:22px;font-weight:800;color:#1a5c2e}
 .rc-holes{font-size:11px;color:#aaa;margin-top:1px}
-.rc-actions{display:flex;gap:6px;margin-top:8px}
+.rc-actions{display:flex;gap:6px;flex-wrap:wrap}
 .btn-sm{border:none;border-radius:7px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer}
 .btn-sm.green{background:#1a5c2e;color:white}
 .btn-sm.brown{background:#5c4a1a;color:white}
@@ -615,20 +616,22 @@ function renderHome() {
         const scoreStr = played > 0 ? fmtRelScore(diff) : '—';
         const scoreColor = played > 0 ? (diff < 0 ? '#1a5c2e' : diff > 0 ? '#c0392b' : '#555') : '#aaa';
         return `<div class="round-card" data-id="${r.id}">
-            <div class="rc-left">
-                <div class="rc-name">${esc(r.name)}</div>
-                <div class="rc-meta">${esc(r.date)}</div>
-                <div class="rc-actions">
-                    <button class="btn-sm green" data-action="view" data-id="${r.id}">View</button>
-                    <button class="btn-sm brown" data-action="dlshots" data-id="${r.id}">Shots CSV</button>
-                    <button class="btn-sm brown" data-action="dlcard" data-id="${r.id}">Scorecard</button>
-                    <button class="btn-sm brown" data-action="dlkml" data-id="${r.id}">KML</button>
-                    <button class="btn-sm red" data-action="delete" data-id="${r.id}">Delete</button>
+            <div class="rc-top">
+                <div class="rc-left">
+                    <div class="rc-name">${esc(r.name)}</div>
+                    <div class="rc-meta">${esc(r.date)}</div>
+                </div>
+                <div class="rc-right">
+                    <div class="rc-score" style="color:${scoreColor}">${scoreStr}</div>
+                    <div class="rc-holes">${played} hole${played!==1?'s':''}</div>
                 </div>
             </div>
-            <div class="rc-right">
-                <div class="rc-score" style="color:${scoreColor}">${scoreStr}</div>
-                <div class="rc-holes">${played} hole${played!==1?'s':''}</div>
+            <div class="rc-actions">
+                <button class="btn-sm green" data-action="view" data-id="${r.id}">View</button>
+                <button class="btn-sm brown" data-action="dlshots" data-id="${r.id}">Shots CSV</button>
+                <button class="btn-sm brown" data-action="dlcard" data-id="${r.id}">Scorecard</button>
+                <button class="btn-sm brown" data-action="dlkml" data-id="${r.id}">KML</button>
+                <button class="btn-sm red" data-action="delete" data-id="${r.id}">Delete</button>
             </div>
         </div>`;
     }).join('');
@@ -1223,7 +1226,11 @@ document.getElementById('btnSummaryBack').addEventListener('click', () => {
 // ══════════════════════════════════════════
 // DOWNLOADS
 // ══════════════════════════════════════════
-function safeDate(r) { return (r.date||'round').replace(/[^a-z0-9]/gi,'-'); }
+function safeFilename(r) {
+    const name = (r.name||'round').replace(/[^a-z0-9]/gi,'-').replace(/-+/g,'-').replace(/^-|-$/g,'');
+    const date = (r.date||'').replace(/[^a-z0-9]/gi,'-').replace(/-+/g,'-').replace(/^-|-$/g,'');
+    return `${name}-${date}`;
+}
 
 function downloadShots(r) {
     if (!r||!r.shots.length) { showToast('No shots to download'); return; }
@@ -1231,7 +1238,7 @@ function downloadShots(r) {
     const rows = r.shots.map(s =>
         [s.hole,s.club,s.date,s.time,s.startLat,s.startLng,s.endLat,s.endLng,s.distance].join(',')
     );
-    downloadFile([header,...rows].join('\n'), `shots-${safeDate(r)}.csv`, 'text/csv');
+    downloadFile([header,...rows].join('\n'), `shots-${safeFilename(r)}.csv`, 'text/csv');
     showToast(`Downloaded ${r.shots.length} shots`);
 }
 
@@ -1246,7 +1253,7 @@ function downloadScorecard(r) {
         if (!sc) return `${h},,,,,,, `;
         return [h,sc.par,sc.score,fmtRelScore(sc.score-sc.par),sc.putts,sc.penalties,sc.drive,sc.sand?'Yes':'No'].join(',');
     });
-    downloadFile([header,...rows].join('\n'), `scorecard-${safeDate(r)}.csv`, 'text/csv');
+    downloadFile([header,...rows].join('\n'), `scorecard-${safeFilename(r)}.csv`, 'text/csv');
     showToast('Scorecard downloaded');
 }
 
@@ -1291,7 +1298,7 @@ function downloadKML(r) {
   <Document><name>${r.name}</name>${styleXml}${foldersXml}
   </Document>
 </kml>`;
-    downloadFile(kml, `shots-${safeDate(r)}.kml`, 'application/vnd.google-earth.kml+xml');
+    downloadFile(kml, `shots-${safeFilename(r)}.kml`, 'application/vnd.google-earth.kml+xml');
     showToast(`Exported ${r.shots.length} shots as KML`);
 }
 
