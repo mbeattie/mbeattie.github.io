@@ -69,11 +69,18 @@ header h1{font-size:18px;font-weight:700}
 .form-group input[type=text]{width:100%;border:2px solid #e0e0d8;border-radius:10px;padding:12px;font-size:16px;outline:none}
 .form-group input[type=text]:focus{border-color:#1a5c2e}
 
-/* ── Stepper ── */
+/* ── Stepper (start hole only) ── */
 .stepper{display:flex;align-items:center;gap:0;border:2px solid #e0e0d8;border-radius:10px;overflow:hidden;width:fit-content}
 .stepper button{background:#f4f4ef;border:none;width:44px;height:44px;font-size:20px;font-weight:300;cursor:pointer;color:#333;flex-shrink:0}
 .stepper button:active{background:#e0e0d8}
 .stepper span{min-width:52px;text-align:center;font-size:18px;font-weight:700;padding:0 8px}
+
+/* ── Tile picker (score entry) ── */
+.tile-row{display:flex;gap:7px;overflow-x:auto;padding:4px 2px 6px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.tile-row::-webkit-scrollbar{display:none}
+.tile{flex-shrink:0;min-width:52px;height:52px;border-radius:12px;border:2px solid #e0e0d8;background:#f4f4ef;font-size:18px;font-weight:700;color:#333;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .1s,border-color .1s,color .1s}
+.tile.sel{background:#1a5c2e;border-color:#1a5c2e;color:white}
+.tile:active{background:#e0e0d8}
 
 /* ── Active round screen ── */
 .round-topbar{background:white;border-bottom:1px solid #deded6;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px}
@@ -140,10 +147,10 @@ header h1{font-size:18px;font-weight:700}
 .seg-control button.sel{background:#1a5c2e;color:white}
 .score-group.full{grid-column:1/-1}
 .par-score-row{display:flex;align-items:center;gap:16px;grid-column:1/-1}
-.rel-score{font-size:22px;font-weight:800;min-width:50px;text-align:center}
+.rel-score{font-size:22px;font-weight:800;min-width:44px;text-align:right}
 .rel-score.under{color:#1a5c2e}
 .rel-score.over{color:#c0392b}
-.rel-score.even{color:#555}
+.rel-score.even{color:#aaa}
 
 /* ── Round summary screen ── */
 .summary-body{flex:1;overflow-y:auto;padding:14px}
@@ -417,45 +424,27 @@ header h1{font-size:18px;font-weight:700}
 <div class="modal-overlay" id="modalScore">
   <div class="modal-sheet">
     <div class="modal-handle"></div>
-    <div class="modal-head"><h2 id="scoreModalTitle">Hole 1 Score</h2></div>
+    <div class="modal-head">
+      <h2 id="scoreModalTitle">Hole 1 Score</h2>
+      <div class="rel-score even" id="relScore">E</div>
+    </div>
     <div class="modal-body">
       <div class="score-grid">
-        <!-- Par + score relative display -->
-        <div class="score-group">
+        <div class="score-group full">
           <label>Par</label>
-          <div class="stepper">
-            <button id="parMinus">−</button>
-            <span id="parVal">4</span>
-            <button id="parPlus">+</button>
-          </div>
-        </div>
-        <div class="score-group" style="align-items:center;justify-content:flex-end">
-          <label>&nbsp;</label>
-          <div class="rel-score even" id="relScore">E</div>
+          <div class="tile-row" id="parTiles"></div>
         </div>
         <div class="score-group full">
           <label>Total Strokes</label>
-          <div class="stepper">
-            <button id="scoreMinus">−</button>
-            <span id="scoreVal">4</span>
-            <button id="scorePlus">+</button>
-          </div>
+          <div class="tile-row" id="scoreTiles"></div>
         </div>
-        <div class="score-group">
+        <div class="score-group full">
           <label>Putts</label>
-          <div class="stepper">
-            <button id="puttsMinus">−</button>
-            <span id="puttsVal">2</span>
-            <button id="puttsPlus">+</button>
-          </div>
+          <div class="tile-row" id="puttsTiles"></div>
         </div>
-        <div class="score-group">
+        <div class="score-group full">
           <label>Penalties</label>
-          <div class="stepper">
-            <button id="penMinus">−</button>
-            <span id="penVal">0</span>
-            <button id="penPlus">+</button>
-          </div>
+          <div class="tile-row" id="penTiles"></div>
         </div>
         <div class="score-group full">
           <label>Drive Direction</label>
@@ -581,6 +570,31 @@ function stepper(minusId, plusId, valId, min, max, onChange) {
     document.getElementById(minusId).addEventListener('click', () => set(val - 1));
     document.getElementById(plusId).addEventListener('click',  () => set(val + 1));
     return { get: () => val, set };
+}
+
+function tilePicker(containerId, values, onChange) {
+    const el = document.getElementById(containerId);
+    let current = values[0];
+    function build() {
+        el.innerHTML = values.map(v =>
+            `<button class="tile${v===current?' sel':''}" data-val="${v}">${v}</button>`
+        ).join('');
+        el.querySelectorAll('.tile').forEach(btn => {
+            btn.addEventListener('click', () => {
+                current = parseInt(btn.dataset.val);
+                el.querySelectorAll('.tile').forEach(b => b.classList.toggle('sel', b===btn));
+                if (onChange) onChange(current);
+            });
+        });
+        // scroll selected tile into view
+        const sel = el.querySelector('.sel');
+        if (sel) sel.scrollIntoView({inline:'center', block:'nearest'});
+    }
+    build();
+    return {
+        get: () => current,
+        set: (v) => { current = v; build(); }
+    };
 }
 
 function segControl(containerId, onChange) {
@@ -786,10 +800,10 @@ function initScoreControls() {
         el.textContent = fmtRelScore(diff);
         el.className = `rel-score ${relScoreClass(diff)}`;
     }
-    parCtrl   = stepper('parMinus',   'parPlus',   'parVal',   3, 5,  updateRelScore);
-    scoreCtrl = stepper('scoreMinus', 'scorePlus', 'scoreVal', 1, 12, updateRelScore);
-    puttsCtrl = stepper('puttsMinus', 'puttsPlus', 'puttsVal', 0, 6);
-    penCtrl   = stepper('penMinus',   'penPlus',   'penVal',   0, 6);
+    parCtrl   = tilePicker('parTiles',   [3,4,5],                                    updateRelScore);
+    scoreCtrl = tilePicker('scoreTiles', [1,2,3,4,5,6,7,8,9,10,11,12],              updateRelScore);
+    puttsCtrl = tilePicker('puttsTiles', [0,1,2,3,4,5,6]);
+    penCtrl   = tilePicker('penTiles',   [0,1,2,3,4,5,6]);
     driveCtrl = segControl('driveCtrl');
     sandCtrl  = segControl('sandCtrl');
 }
@@ -801,15 +815,16 @@ document.getElementById('btnEnterScore').addEventListener('click', () => {
     document.getElementById('scoreModalTitle').textContent = `Hole ${currentHole} Score`;
 
     // Pre-fill or defaults
-    parCtrl.set(existing ? existing.par : 4);
-    scoreCtrl.set(existing ? existing.score : 4);
-    puttsCtrl.set(existing ? existing.putts : 2);
-    penCtrl.set(existing ? existing.penalties : 0);
+    const par   = existing ? existing.par   : 4;
+    const score = existing ? existing.score : 4;
+    parCtrl.set(par);
+    scoreCtrl.set(score);
+    puttsCtrl.set(existing ? existing.putts     : 2);
+    penCtrl.set(existing   ? existing.penalties : 0);
     driveCtrl.set(existing ? existing.drive : 'straight');
-    sandCtrl.set(existing ? (existing.sand ? 'yes' : 'no') : 'no');
+    sandCtrl.set(existing  ? (existing.sand ? 'yes' : 'no') : 'no');
 
-    // Trigger rel score update
-    const diff = (existing ? existing.score : 4) - (existing ? existing.par : 4);
+    const diff = score - par;
     const el = document.getElementById('relScore');
     el.textContent = fmtRelScore(diff);
     el.className = `rel-score ${relScoreClass(diff)}`;
