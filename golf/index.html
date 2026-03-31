@@ -392,6 +392,17 @@ header h1{font-size:18px;font-weight:700}
         <button class="club-btn" data-club="7W">7W</button>
         <button class="club-btn" data-club="9W">9W</button>
       </div>
+      <div class="club-group-label">Hybrids</div>
+      <div class="club-row c4" style="grid-template-columns:repeat(3,1fr)">
+        <button class="club-btn" data-club="2H">2H</button>
+        <button class="club-btn" data-club="3H">3H</button>
+        <button class="club-btn" data-club="4H">4H</button>
+      </div>
+      <div class="club-row c4" style="grid-template-columns:repeat(3,1fr)">
+        <button class="club-btn" data-club="5H">5H</button>
+        <button class="club-btn" data-club="6H">6H</button>
+        <button class="club-btn" data-club="7H">7H</button>
+      </div>
       <div class="club-group-label">Irons</div>
       <div class="club-row c5">
         <button class="club-btn" data-club="1i">1i</button>
@@ -420,10 +431,11 @@ header h1{font-size:18px;font-weight:700}
         <button class="club-btn" data-club="60°">60°</button>
       </div>
       <div class="club-group-label">Wedges — named</div>
-      <div class="club-row c4">
+      <div class="club-row c5">
         <button class="club-btn" data-club="PW">PW</button>
         <button class="club-btn" data-club="AW">AW</button>
         <button class="club-btn" data-club="GW">GW</button>
+        <button class="club-btn" data-club="SW">SW</button>
         <button class="club-btn" data-club="LW">LW</button>
       </div>
       <div class="club-group-label">Short Game</div>
@@ -1312,13 +1324,14 @@ function downloadScorecard(r) {
 function downloadKML(r) {
     if (!r||!r.shots.length) { showToast('No shots to export'); return; }
     const styleColors = {
-        driver:'ffFF7929', wood:'ff53C853', iron:'ff40D7FF', wedge:'ff0066FF', putter:'ff0000D5'
+        driver:'ffFF7929', wood:'ff53C853', hybrid:'ffCC44CC', iron:'ff40D7FF', wedge:'ff0066FF', putter:'ff0000D5'
     };
     function shotStyle(club) {
         if (club==='Driver') return 'driver';
         if (['3W','5W','7W','9W'].includes(club)) return 'wood';
+        if (/^\d+H$/.test(club)) return 'hybrid';
         if (/^\d+i$/.test(club)) return 'iron';
-        if (/°$/.test(club)||['PW','AW','GW','LW'].includes(club)) return 'wedge';
+        if (/°$/.test(club)||['PW','AW','GW','SW','LW'].includes(club)) return 'wedge';
         if (club==='Putter') return 'putter';
         return 'iron';
     }
