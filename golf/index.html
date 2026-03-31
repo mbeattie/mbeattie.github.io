@@ -315,13 +315,6 @@ header h1{font-size:18px;font-weight:700}
   <div class="shots-section">
     <div class="shots-header">
       <span class="shots-title" id="shotsTitle">Shots (0)</span>
-      <div class="shots-actions">
-        <div class="shots-actions-row">
-          <button class="btn-dl" id="btnDlShots">Download Shots</button>
-          <button class="btn-dl brown" id="btnDlKML">Export KML</button>
-        </div>
-        <button class="btn-clear-shots" id="btnClearShots">Clear Shots</button>
-      </div>
     </div>
     <div id="shotsList"></div>
   </div>
@@ -1172,22 +1165,6 @@ function renderShots() {
     }, {passive:true});
 }
 
-document.getElementById('btnClearShots').addEventListener('click', () => {
-    const r = getActive(); if (!r||!r.shots.length) { showToast('No shots to clear'); return; }
-    if (confirm(`Clear all ${r.shots.length} shots?`)) { r.shots = []; saveData(); renderShots(); }
-});
-
-document.getElementById('btnDlShots').addEventListener('click', () => {
-    const r = getActive();
-    if (!r||!r.shots.length) { showToast('No shots to download'); return; }
-    downloadShots(r);
-});
-
-document.getElementById('btnDlKML').addEventListener('click', () => {
-    const r = getActive();
-    if (!r||!r.shots.length) { showToast('No shots to export'); return; }
-    downloadKML(r);
-});
 
 // ══════════════════════════════════════════
 // ROUND SUMMARY SCREEN
@@ -1267,10 +1244,7 @@ function openSummary(id, isEnding) {
     const actionsEl = document.getElementById('summaryActions');
     if (isEnding) {
         actionsEl.innerHTML = `
-            <button class="btn-primary" id="btnConfirmEnd">Confirm &amp; Save Round</button>
-            <button class="btn-outline brown" id="btnSumDlShots">Download Shots CSV</button>
-            <button class="btn-outline brown" id="btnSumDlCard">Download Scorecard CSV</button>
-            <button class="btn-outline brown" id="btnSumDlKML">Export KML</button>
+            <button class="btn-primary" id="btnConfirmEnd">Save Round</button>
             <button class="btn-danger" id="btnCancelEnd">Keep Playing</button>`;
         document.getElementById('btnConfirmEnd').addEventListener('click', () => {
             const r = getRound(summaryRoundId); if (!r) return;
