@@ -161,6 +161,7 @@ header h1{font-size:18px;font-weight:700}
 .scorecard-table td{padding:8px 6px;text-align:center;border-bottom:1px solid #f0f0e8}
 .scorecard-table tr:last-child td{border-bottom:none}
 .scorecard-table tr.totals td{background:#f4f4ef;font-weight:700}
+.scorecard-table tr.subtotal td{background:#eef4f0;font-weight:700;color:#1a5c2e;font-size:12px}
 .scorecard-table td.hole-num{font-weight:700;color:#555}
 .scorecard-table td.empty{color:#ccc}
 .td-over{color:#c0392b;font-weight:700}
@@ -1206,26 +1207,45 @@ function openSummary(id, isEnding) {
     el.style.color = diff<0?'#6dbf82':diff>0?'#ff7b7b':'white';
 
     // Table
-    const holesPlayed = Object.keys(r.scorecard).map(Number).sort((a,b)=>a-b);
     let rows = '';
     let totScore=0, totPar=0, totPutts=0, totPen=0;
-    for (let h = 1; h <= 18; h++) {
-        const sc = r.scorecard[h];
-        if (!sc) { rows += `<tr><td class="hole-num">${h}</td><td class="empty" colspan="6">—</td></tr>`; continue; }
-        const diff = sc.score - sc.par;
-        const diffStr = fmtRelScore(diff);
-        const diffCls = diff<0?'td-under':diff>0?'td-over':'';
-        totScore+=sc.score; totPar+=sc.par; totPutts+=sc.putts; totPen+=sc.penalties;
-        rows += `<tr>
-            <td class="hole-num">${h}</td>
-            <td>${sc.par}</td>
-            <td class="${diffCls}">${sc.score}</td>
-            <td class="${diffCls}">${diffStr}</td>
-            <td>${sc.putts}</td>
-            <td>${sc.penalties}</td>
-            <td>${sc.sand?'✓':''}</td>
+    let frontScore=0, frontPar=0, frontPutts=0, frontPen=0;
+    let backScore=0,  backPar=0,  backPutts=0,  backPen=0;
+
+    function subtotalRow(label, par, score, putts, pen) {
+        if (!par) return `<tr class="subtotal"><td>${label}</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td></td></tr>`;
+        const d = score - par;
+        return `<tr class="subtotal">
+            <td>${label}</td><td>${par}</td>
+            <td>${score}</td>
+            <td class="${d<0?'td-under':d>0?'td-over':''}">${fmtRelScore(d)}</td>
+            <td>${putts}</td><td>${pen}</td><td></td>
         </tr>`;
     }
+
+    for (let h = 1; h <= 18; h++) {
+        const sc = r.scorecard[h];
+        if (!sc) { rows += `<tr><td class="hole-num">${h}</td><td class="empty" colspan="6">—</td></tr>`; }
+        else {
+            const diff = sc.score - sc.par;
+            const diffCls = diff<0?'td-under':diff>0?'td-over':'';
+            totScore+=sc.score; totPar+=sc.par; totPutts+=sc.putts; totPen+=sc.penalties;
+            if (h <= 9) { frontScore+=sc.score; frontPar+=sc.par; frontPutts+=sc.putts; frontPen+=sc.penalties; }
+            else        { backScore+=sc.score;  backPar+=sc.par;  backPutts+=sc.putts;  backPen+=sc.penalties; }
+            rows += `<tr>
+                <td class="hole-num">${h}</td>
+                <td>${sc.par}</td>
+                <td class="${diffCls}">${sc.score}</td>
+                <td class="${diffCls}">${fmtRelScore(diff)}</td>
+                <td>${sc.putts}</td>
+                <td>${sc.penalties}</td>
+                <td>${sc.sand?'✓':''}</td>
+            </tr>`;
+        }
+        if (h === 9)  rows += subtotalRow('Out', frontPar, frontScore, frontPutts, frontPen);
+    }
+    rows += subtotalRow('In', backPar, backScore, backPutts, backPen);
+
     const totDiff = totScore - totPar;
     rows += `<tr class="totals">
         <td>Tot</td><td>${totPar||'—'}</td>
